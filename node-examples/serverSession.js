@@ -11,11 +11,11 @@ var app = express();
 app.use(morgan('dev'));
 
 app.use(session({
-  name: 'session-id',
-  secret: '12345-67890-09876-54321',
-  saveUninitialized: true,
-  resave: true,
-  store: new FileStore()
+	name: 'session-id',
+	secret: '12345-67890-09876-54321',
+	saveUninitialized: true,
+	resave: true,
+	store: new FileStore()
 }));
 
 function auth (req, res, next) {
