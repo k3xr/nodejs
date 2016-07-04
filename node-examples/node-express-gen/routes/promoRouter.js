@@ -1,22 +1,22 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
+var Verify = require('./verify');
 
 var Promotions = require('../models/promotions');
 
 var promoRouter = express.Router();
-
 promoRouter.use(bodyParser.json());
 
 promoRouter.route('/')
-.get(function(req,res,next){
+.get(Verify.verifyOrdinaryUser, function(req,res,next){
 	Promotions.find({}, function (err, promotion) {
 		if (err) throw err;
 		res.json(promotion);
 	});
 })
 
-.post(function(req, res, next){
+.post(Verify.verifyOrdinaryUser, Verify.verifyAdmin, function(req, res, next){
 	Promotions.create(req.body, function (err, promotion) {
 		if (err) throw err;
 		console.log('Promotion created!');
@@ -29,7 +29,7 @@ promoRouter.route('/')
 	}); 
 })
 
-.delete(function(req, res, next){
+.delete(Verify.verifyOrdinaryUser, Verify.verifyAdmin, function(req, res, next){
 	Promotions.remove({}, function (err, resp) {
 		if (err) throw err;
 		res.json(resp);
@@ -37,6 +37,18 @@ promoRouter.route('/')
 });
 
 promoRouter.route('/:promotionId')
+.all(Verify.verifyOrdinaryUser, function(req,res,next) {
+	var validId = mongoose.Types.ObjectId.isValid(req.params.promotionId);
+	if(!validId){
+		var err = new Error('Not Found');
+		err.status = 404;
+		return next(err);
+	}
+	else{
+		next();
+	}
+})
+
 .get(function(req,res,next){
 	Promotions.findById(req.params.promotionId, function (err, promotion) {
 		if (err) throw err;
@@ -44,7 +56,7 @@ promoRouter.route('/:promotionId')
 	});
 })
 
-.put(function(req, res, next){
+.put(Verify.verifyAdmin, function(req, res, next){
 	Promotions.findByIdAndUpdate(req.params.promotionId, {
 		$set: req.body
 	}, {
@@ -55,7 +67,7 @@ promoRouter.route('/:promotionId')
 	});
 })
 
-.delete(function(req, res, next){
+.delete(Verify.verifyAdmin, function(req, res, next){
 	Promotions.findByIdAndRemove(req.params.promotionId, function (err, resp) {        
 		if (err) throw err;
 		res.json(resp);

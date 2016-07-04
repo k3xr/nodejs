@@ -33,3 +33,17 @@ exports.verifyOrdinaryUser = function (req, res, next) {
 		return next(err);
 	}
 };
+
+// Checks if its and admin account (should be called after verifyOrdinaryUser)
+exports.verifyAdmin = function (req, res, next){
+	if(req.decoded._doc.admin){
+		// It is an admin account
+		next();
+	}
+	else{
+		// it is not an admin account
+		var err = new Error('You are not authorized to perform this operation!');
+		err.status = 403;
+		return next(err);
+	}
+};

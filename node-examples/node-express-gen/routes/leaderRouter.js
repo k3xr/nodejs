@@ -1,22 +1,22 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
+var Verify = require('./verify');
 
 var Leadership = require('../models/leadership');
 
 var leaderRouter = express.Router();
-
 leaderRouter.use(bodyParser.json());
 
 leaderRouter.route('/')
-.get(function(req,res,next){
+.get(Verify.verifyOrdinaryUser, function(req,res,next){
 	Leadership.find({}, function (err, leader) {
 		if (err) throw err;
 		res.json(leader);
 	});
 })
 
-.post(function(req, res, next){
+.post(Verify.verifyOrdinaryUser, Verify.verifyAdmin, function(req, res, next){
 	Leadership.create(req.body, function (err, leader) {
 		if (err) throw err;
 		console.log('Leader created!');
@@ -29,7 +29,7 @@ leaderRouter.route('/')
 	});    
 })
 
-.delete(function(req, res, next){
+.delete(Verify.verifyOrdinaryUser, Verify.verifyAdmin, function(req, res, next){
 	Leadership.remove({}, function (err, resp) {
 		if (err) throw err;
 		res.json(resp);
@@ -37,6 +37,18 @@ leaderRouter.route('/')
 });
 
 leaderRouter.route('/:leaderId')
+.all(Verify.verifyOrdinaryUser, function(req,res,next) {
+	var validId = mongoose.Types.ObjectId.isValid(req.params.leaderId);
+	if(!validId){
+		var err = new Error('Not Found');
+		err.status = 404;
+		return next(err);
+	}
+	else{
+		next();
+	}
+})
+
 .get(function(req,res,next){
 	Leadership.findById(req.params.leaderId, function (err, leader) {
 		if (err) throw err;
@@ -44,7 +56,7 @@ leaderRouter.route('/:leaderId')
 	});
 })
 
-.put(function(req, res, next){
+.put(Verify.verifyAdmin, function(req, res, next){
 	Leadership.findByIdAndUpdate(req.params.leaderId, {
 		$set: req.body
 	}, {
@@ -55,7 +67,7 @@ leaderRouter.route('/:leaderId')
 	});
 })
 
-.delete(function(req, res, next){
+.delete(Verify.verifyAdmin, function(req, res, next){
 	Leadership.findByIdAndRemove(req.params.leaderId, function (err, resp) {        
 		if (err) throw err;
 		res.json(resp);
